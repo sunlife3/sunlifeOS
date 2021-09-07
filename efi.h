@@ -4,7 +4,8 @@
 #define IN
 #define OUT
 #define EFIAPI
-#define EFI_SUCCESS 0
+//#define EFI_SUCCESS 0
+#define EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL  0x00000001
 
 typedef char                BOOLEAN;
 typedef int                 INTN;
@@ -65,7 +66,7 @@ struct EFI_SYSTEM_TABLE{
     		struct EFI_INPUT_KEY *ReadKey);
 			void *WaitForKey;
 	} *ConIn;
-    EFI_HANDLE                       ConsoleOutHandle;
+    EFI_HANDLE ConsoleOutHandle;
     struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
 		unsigned long long _buf1;
 		EFI_STATUS (*OutputString) (struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This, CHAR16 *String);
@@ -103,7 +104,7 @@ struct EFI_FILE_PROTOCOL {
 	EFI_STATUS (*Open)(struct EFI_FILE_PROTOCOL *This, struct EFI_FILE_PROTOCOL **NewHandle,
 		CHAR16 *Filename, UINT64 OpenMode, UINT64 Attributes);
 	EFI_STATUS (*Close)(struct EFI_FILE_PROTOCOL *This);
-	EFI_STATUS (*Delete)(struct EFI_FILE_PROTOCOL *This);;
+	EFI_STATUS (*Delete)(struct EFI_FILE_PROTOCOL *This);
 	EFI_STATUS (*Read)(struct EFI_FILE_PROTOCOL *This,UINTN *BufferSize,VOID *Buffer);
 	EFI_STATUS (*Write)(struct EFI_FILE_PROTOCOL *This,UINTN *BufferSize,VOID *Buffer);
 	unsigned long long _buf[9];
@@ -116,6 +117,8 @@ struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
 		struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This, struct EFI_FILE_PROTOCOL **Root);
 };
 
-//extern struct EFI_SYSTEM_TABLE *ST;
+unsigned short *msg;
+extern EFI_GUID gEfiBlockIoProtocolGuid;
+extern EFI_GUID gEfiLoadedImageProtocolGuid;
 
 #endif
