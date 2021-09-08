@@ -16,7 +16,7 @@ EFI_STATUS GetMemoryMap(struct MemoryMap* map,struct EFI_SYSTEM_TABLE *SystemTab
     if(map->buffer == 0){
         return 1;
     }
-    ST->ConOut->OutputString(ST->ConOut, L"GetMemoryMap\n");
+    ST->ConOut->OutputString(ST->ConOut, L"GetMemoryMap\r\n");
     map->map_size = map->buffer_size;
     return SystemTable->BootServices->GetMemoryMap(
         &map->map_size,
@@ -30,7 +30,6 @@ EFI_STATUS OpenRootDir(EFI_HANDLE ImageHandle, struct EFI_FILE_PROTOCOL** root){
     EFI_STATUS status;
     struct EFI_LOADED_IMAGE_PROTOCOL* loaded_image;
     struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs;
-    ST->ConOut->OutputString(ST->ConOut, L"IN OpenRootDir\n");
     status = ST->BootServices->OpenProtocol(
         ImageHandle,
         &gEfiLoadedImageProtocolGuid,
@@ -44,19 +43,21 @@ EFI_STATUS OpenRootDir(EFI_HANDLE ImageHandle, struct EFI_FILE_PROTOCOL** root){
         ST->ConOut->OutputString(ST->ConOut,msg);
         return status;
     }
-    ST->ConOut->OutputString(ST->ConOut, L"OpenRootDir2\n");
-    status = BS->OpenProtocol(
+    ST->ConOut->OutputString(ST->ConOut, L"OpenProtocol2\r\n");
+    status = ST->BootServices->OpenProtocol(
         loaded_image->DeviceHandle,
-        &gEfiLoadedImageProtocolGuid,
+        &gEfiSimpleFileSystemProtocolGuid,
         (VOID**)&fs,
         ImageHandle,
         0,
         EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL
     );
     if(status){
+        retErrMsg(status);
+        ST->ConOut->OutputString(ST->ConOut,msg);
         return status;
     }
-    ST->ConOut->OutputString(ST->ConOut, L"OpenRootDir3\n");
+    ST->ConOut->OutputString(ST->ConOut, L"OpenRootDir3 done\n");
     return fs->OpenVolume(fs, root);
 }
 
@@ -78,7 +79,7 @@ EFI_STATUS EfiMain (EFI_HANDLE ImageHandle,
         SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Failed to open root directory\n");
         Halt();
     }
-    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"succcess open root directory\n");
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"succcess open root directory\r\n");
     
     struct EFI_FILE_PROTOCOL* root_dir;
     status = OpenRootDir(ImageHandle, &root_dir);
