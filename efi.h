@@ -30,6 +30,20 @@ typedef struct {
 	UINT32 Data1; UINT16 Data2; UINT16 Data3; UINT8 Data4[8];
 } EFI_GUID;
 
+typedef struct { 
+	UINT16   Year;              // 1900 – 9999 
+	UINT8   Month;              // 1 – 12 
+	UINT8   Day;                // 1 – 31 
+	UINT8   Hour;               // 0 – 23 
+	UINT8   Minute;             // 0 – 59 
+	UINT8   Second;             // 0 – 59 
+	UINT8   Pad1;
+	UINT32   Nanosecond;        // 0 – 999,999,999 
+	INT16   TimeZone;           // -1440 to 1440 or 2047 
+	UINT8   Daylight;
+	UINT8   Pad2;
+} EFI_TIME;
+
 typedef struct {
 	UINT64 Signature;
 	UINT32 Rivision;
@@ -53,6 +67,31 @@ struct EFI_MEMORY_DESCRIPTOR {
 	UINT64                NumberOfPages;
 	UINT64                Attribute;
 };
+typedef enum {
+	AllocateAnyPages,
+	AllocateMaxAddress,
+	AllocateAddress,
+	MaxAllocateType
+} EFI_ALLOCATE_TYPE;
+
+typedef enum {
+	EfiReservedMemoryType,
+	EfiLoaderCode,
+	EfiLoaderData,
+	EfiBootServicesCode,
+	EfiBootServicesData,
+	EfiRuntimeServicesCode,
+	EfiRuntimeServicesData,
+	EfiConventionalMemory,
+	EfiUnusableMemory,
+	EfiACPIReclaimMemory,
+	EfiACPIMemoryNVS,
+	EfiMemoryMappedIO,
+	EfiMemoryMappedIOPortSpace,
+	EfiPalCode,
+	EfiPersistentMemory,
+	EfiMaxMemoryType
+} EFI_MEMORY_TYPE;
 
 struct EFI_SYSTEM_TABLE{
 	EFI_TABLE_HEADER                 Hdr;
@@ -76,7 +115,9 @@ struct EFI_SYSTEM_TABLE{
     unsigned long long _buf2[3]; //EFI_RUNTIME_SERVICES
     struct EFI_BOOT_SERVICES {
 		EFI_TABLE_HEADER        Hdr;
-		unsigned long long _buf[4];
+		unsigned long long _buf[2];
+		EFI_STATUS (*AllocatePages)(EFI_ALLOCATE_TYPE Type, EFI_MEMORY_TYPE MemoryType, UINTN Pages, EFI_PHYSICAL_ADDRESS *Memory);
+		unsigned long long _buf2[1];
 		EFI_STATUS (*GetMemoryMap)(UINTN *MemoryMapSize, struct EFI_MEMORY_DESCRIPTOR *MemoryMap,
 			UINTN *MapKey, UINTN *DescriptorSize, UINT32 *DescriptorVersion);
 		unsigned long long _buf3[21];
@@ -99,17 +140,41 @@ struct EFI_LOADED_IMAGE_PROTOCOL{
 };
 
 /////////////////// EFI_FILE_PROTOCOL /////////////////
+#define EFI_FILE_MODE_READ     0x0000000000000001
+#define EFI_FILE_MODE_WRITE    0x0000000000000002
+#define EFI_FILE_MODE_CREATE   0x8000000000000000
 struct EFI_FILE_PROTOCOL {
 	UINT64          Rivision;
 	EFI_STATUS (*Open)(struct EFI_FILE_PROTOCOL *This, struct EFI_FILE_PROTOCOL **NewHandle,
 		CHAR16 *Filename, UINT64 OpenMode, UINT64 Attributes);
 	EFI_STATUS (*Close)(struct EFI_FILE_PROTOCOL *This);
 	EFI_STATUS (*Delete)(struct EFI_FILE_PROTOCOL *This);
-	EFI_STATUS (*Read)(struct EFI_FILE_PROTOCOL *This,UINTN *BufferSize,VOID *Buffer);
-	EFI_STATUS (*Write)(struct EFI_FILE_PROTOCOL *This,UINTN *BufferSize,VOID *Buffer);
-	unsigned long long _buf[9];
+	EFI_STATUS (*Read)(struct EFI_FILE_PROTOCOL *This, UINTN *BufferSize, VOID* Buffer);
+	EFI_STATUS (*Write)(struct EFI_FILE_PROTOCOL *This,UINTN *BufferSize, VOID* Buffer);
+	unsigned long long _buf[2];
+	EFI_STATUS (*GetInfo)(struct EFI_FILE_PROTOCOL *This,EFI_GUID *InformationType,UINTN *BufferSize, VOID *Buffer);
+	unsigned long long _buf2[6];
 };
 
+typedef struct { 
+ UINT64    Size;
+ UINT64    FileSize;
+ UINT64    PhysicalSize;
+ EFI_TIME  CreateTime;
+ EFI_TIME  LastAccessTime;
+ EFI_TIME  ModificationTime;
+ UINT64    Attribute;
+ CHAR16    FileName[];
+} EFI_FILE_INFO;
+
+typedef struct { 
+ UINT64   Size;
+ BOOLEAN  ReadOnly;
+ UINT64   VolumeSize;
+ UINT64   FreeSpace;
+ UINT32   BlockSize;
+ CHAR16   VolumeLabel[];
+} EFI_FILE_SYSTEM_INFO;
 ////////////////// EFI_SIMPLE_FILE_SYSTEM_PROTOCOL /////////////////
 struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
 	UINT64  Revision;
@@ -121,4 +186,18 @@ unsigned short *msg;
 extern EFI_GUID gEfiBlockIoProtocolGuid;
 EFI_GUID gEfiLoadedImageProtocolGuid = {0x5B1B31A1,0x9562,0x11d2,{0x8E,0x3F,0x00,0xA0,0xC9,0x69,0x72,0x3B}};
 EFI_GUID gEfiSimpleFileSystemProtocolGuid = {0x0964e5b22,0x6459,0x11d2,{0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}};
+EFI_GUID gEfiFileInfoGuid = {0x09576e93, 0x6d3f,0x11d2, {0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
+struct MemoryMap{
+    unsigned int buffer_size;
+    void* buffer;
+    unsigned int map_size;
+    unsigned int map_key;
+    unsigned int descriptor_size;
+    unsigned long descriptor_version;
+};
+
+struct EFI_SYSTEM_TABLE *ST;
+struct EFI_BOOT_SERVICES *BS;
+
+void __chkstk(){}
 #endif
